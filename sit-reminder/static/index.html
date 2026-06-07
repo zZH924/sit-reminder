@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>久坐放松提醒</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>💺</text></svg>">
+<style>
+/* ====== CSS 变量 ====== */
+:root {
+  --bg: #f5f5f5; --card-bg: #fff; --text: #333; --text-secondary: #555;
+  --text-muted: #888; --text-faint: #999; --text-footer: #aaa;
+  --border: #e0e0e0; --border-light: #eee; --shadow: rgba(0,0,0,0.08);
+  --input-border: #ddd; --input-bg: #fff;
+  --btn-secondary-bg: #eee; --btn-secondary-text: #666;
+  --btn-secondary-hover: #ddd;
+  --progress-bg: #eee; --progress-fill: #4caf50;
+  --exercise-bg: #e8f5e9; --exercise-border: #c8e6c9; --exercise-name: #2e7d32;
+  --notify-bg: #fafafa;
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --card-bg: #16213e; --text: #e0e0e0; --text-secondary: #bbb;
+  --text-muted: #999; --text-faint: #888; --text-footer: #666;
+  --border: #2a2a4a; --border-light: #222244; --shadow: rgba(0,0,0,0.3);
+  --input-border: #333355; --input-bg: #1a1a3e;
+  --btn-secondary-bg: #2a2a4a; --btn-secondary-text: #bbb;
+  --btn-secondary-hover: #333355;
+  --progress-bg: #2a2a4a; --progress-fill: #4caf50;
+  --exercise-bg: #1a3a2a; --exercise-border: #2a5a3a; --exercise-name: #66bb6a;
+  --notify-bg: #1a1a3e;
+}
+@media (prefers-color-scheme: dark) {
+  html[data-theme="auto"] { --bg: #1a1a2e; --card-bg: #16213e; --text: #e0e0e0; --text-secondary: #bbb;
+    --text-muted: #999; --text-faint: #888; --text-footer: #666;
+    --border: #2a2a4a; --border-light: #222244; --shadow: rgba(0,0,0,0.3);
+    --input-border: #333355; --input-bg: #1a1a3e;
+    --btn-secondary-bg: #2a2a4a; --btn-secondary-text: #bbb; --btn-secondary-hover: #333355;
+    --progress-bg: #2a2a4a; --progress-fill: #4caf50;
+    --exercise-bg: #1a3a2a; --exercise-border: #2a5a3a; --exercise-name: #66bb6a;
+    --notify-bg: #1a1a3e;
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
+.header { background: var(--card-bg); padding: 16px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: center; align-items: center; position: relative; }
+.header .title-group { text-align: center; }
+.header h1 { font-size: 24px; color: var(--text); }
+.header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+.theme-toggle { position: absolute; right: 32px; background: none; border: 1px solid var(--border); border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; line-height: 1; color: var(--text-secondary); }
+.theme-toggle:hover { background: var(--btn-secondary-bg); }
+.layout { display: flex; max-width: 900px; margin: 24px auto; gap: 24px; padding: 0 16px; }
+.sidebar { width: 200px; flex-shrink: 0; background: var(--card-bg); border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px var(--shadow); }
+.main { flex: 1; background: var(--card-bg); border-radius: 10px; padding: 32px; box-shadow: 0 1px 3px var(--shadow); text-align: center; }
+.sidebar h3 { font-size: 15px; color: var(--text-secondary); margin-bottom: 12px; }
+.sidebar label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.sidebar input, .sidebar select { width: 100%; padding: 6px 10px; border: 1px solid var(--input-border); border-radius: 6px; font-size: 14px; margin-bottom: 12px; background: var(--input-bg); color: var(--text); }
+.sidebar .divider { border-top: 1px solid var(--border-light); margin: 16px 0; }
+.sidebar .stat { text-align: center; margin-bottom: 12px; }
+.sidebar .stat .num { font-size: 28px; font-weight: 700; color: var(--text); }
+.sidebar .stat .label { font-size: 12px; color: var(--text-faint); }
+.sidebar .stat .streak { color: #ff9800; font-size: 20px; }
+.main .state-title { font-size: 18px; color: var(--text-secondary); margin-bottom: 8px; }
+.main .countdown { font-size: 72px; font-weight: 700; color: var(--text); margin: 16px 0; }
+.main .progress-bar { height: 6px; background: var(--progress-bg); border-radius: 3px; margin: 16px auto; max-width: 300px; overflow: hidden; }
+.main .progress-bar .fill { height: 100%; background: var(--progress-fill); border-radius: 3px; transition: width 1s linear; }
+.btn { display: inline-block; width: 100%; max-width: 280px; padding: 12px 24px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-primary { background: #1976d2; color: #fff; }
+.btn-primary:hover { background: #1565c0; }
+.btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); }
+.btn-success { background: #4caf50; color: #fff; }
+.btn-success:hover { background: #43a047; }
+.btn-warning { background: #ff9800; color: #fff; }
+.btn-warning:hover { background: #f57c00; }
+.btn-group { display: flex; gap: 12px; max-width: 280px; margin: 0 auto; flex-wrap: wrap; justify-content: center; }
+.btn-group .btn { flex: 1; min-width: 100px; }
+.btn-sm { padding: 8px 12px; font-size: 13px; max-width: none; }
+.exercise-card { background: var(--exercise-bg); border: 1px solid var(--exercise-border); border-radius: 8px; padding: 16px; margin: 16px auto; max-width: 320px; text-align: left; }
+.exercise-card .ex-name { font-weight: 700; color: var(--exercise-name); font-size: 16px; }
+.exercise-card .ex-desc { color: var(--text-secondary); font-size: 14px; margin-top: 6px; line-height: 1.6; }
+.break-countdown { font-size: 14px; color: var(--text-muted); margin: 8px 0; }
+.pomodoro-badge { display: inline-block; background: #fff3e0; color: #e65100; padding: 2px 10px; border-radius: 10px; font-size: 13px; margin-left: 8px; }
+[data-theme="dark"] .pomodoro-badge { background: #3e2723; color: #ffab40; }
+.btn-notify { width: 100%; padding: 8px 12px; font-size: 13px; cursor: pointer; border: 1px solid var(--input-border); border-radius: 6px; background: var(--notify-bg); color: var(--text-secondary); }
+.btn-notify:hover { background: var(--btn-secondary-hover); }
+.btn-notify.granted { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+.btn-notify.denied { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
+[data-theme="dark"] .btn-notify.granted { background: #1a3a2a; color: #66bb6a; border-color: #2a5a3a; }
+[data-theme="dark"] .btn-notify.denied { background: #3e1a1a; color: #ef5350; border-color: #5a2a2a; }
+.footer { text-align: center; padding: 16px; color: var(--text-footer); font-size: 12px; }
+.stats-section { margin-top: 24px; text-align: center; }
+.stats-section .chart-wrapper { max-width: 480px; margin: 0 auto; }
+.stats-toggle { font-size: 13px; background: none; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+.stats-toggle:hover { color: var(--text-secondary); }
+.chart-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.chart-tab { padding: 4px 16px; border: 1px solid var(--input-border); border-radius: 14px; font-size: 12px; cursor: pointer; background: var(--card-bg); color: var(--text-secondary); }
+.chart-tab.active { background: #1976d2; color: #fff; border-color: #1976d2; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title-group">
+    <h1>💺 久坐放松提醒</h1>
+    <p>设置工作时长，定时提醒你站起来动一动</p>
+  </div>
+  <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="切换深色模式">🌙</button>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <h3>⚙️ 设置</h3>
+    <label for="work-minutes">工作时长（分钟）</label>
+    <input type="number" id="work-minutes" value="45" min="1" max="120" step="1">
+    <label for="break-minutes">放松时长（分钟）</label>
+    <select id="break-minutes">
+      <option value="1">1</option>
+      <option value="3" selected>3</option>
+      <option value="5">5</option>
+      <option value="15">15</option>
+    </select>
+    <button class="btn btn-warning btn-sm" style="width:100%;margin-bottom:12px;" onclick="setPomodoro()">🍅 番茄钟 (25+5)</button>
+
+    <div class="divider"></div>
+    <h3>📊 统计</h3>
+    <div class="stat"><div class="num streak" id="streak-count">0</div><div class="label">🔥 连续打卡</div></div>
+    <div class="stat"><div class="num" id="today-count">0</div><div class="label">今日完成</div></div>
+    <div class="stat"><div class="num" id="total-count">0</div><div class="label">累计完成</div></div>
+
+    <div class="divider"></div>
+    <button class="btn-notify" id="notify-btn" onclick="requestNotification()">🔔 开启浏览器通知</button>
+  </div>
+
+  <div class="main" id="main-area"></div>
+</div>
+
+<div class="footer">页面保持打开即可收到提醒（提示音 + 系统通知）</div>
+
+
+<script>
+// ====== 状态管理 ======
+var state = 'idle';           // idle | running | paused | break
+var timerId = null;
+var startTime = 0;
+var workSeconds = 45 * 60;
+var breakSeconds = 3 * 60;
+var currentExercise = null;
+var exercises = [];
+var beepPlayed = false;
+var pausedRemaining = 0;      // 暂停时的剩余秒数
+var snoozeCount = 0;          // 本轮 snooze 次数
+var pomodoroRound = 0;        // 番茄钟轮次
+
+// ====== 加载动作库 ======
+fetch('/api/exercises')
+  .then(function(r) { return r.json(); })
+  .then(function(data) { exercises = data; })
+  .catch(function(e) { console.error('加载动作库失败:', e); });
+
+// ====== 深色模式 ======
+function getTheme() {
+  var stats = loadStats();
+  return stats.theme || 'auto';
+}
+function saveTheme(t) {
+  var stats = loadStats();
+  stats.theme = t;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  var btn = document.getElementById('theme-btn');
+  btn.textContent = t === 'dark' ? '☀️' : '🌙';
+  btn.title = t === 'dark' ? '切换浅色模式' : '切换深色模式';
+}
+function toggleTheme() {
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur === 'dark' ? 'light' : 'dark';
+  saveTheme(next);
+  applyTheme(next);
+}
+applyTheme(getTheme());
+
+// ====== 提示音 ======
+function playBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.value = 0.3;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.stop(ctx.currentTime + 0.8);
+  } catch(e) {}
+}
+
+// ====== 格式化时间 ======
+function fmtTime(totalSec) {
+  var m = Math.floor(totalSec / 60);
+  var s = Math.floor(totalSec % 60);
+  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// ====== 设置控件 ======
+var workInput = document.getElementById('work-minutes');
+var breakSelect = document.getElementById('break-minutes');
+
+function setSettingsEnabled(enabled) {
+  workInput.disabled = !enabled;
+  breakSelect.disabled = !enabled;
+}
+function getWorkSeconds() { return parseInt(workInput.value) * 60; }
+function getBreakSeconds() { return parseInt(breakSelect.value) * 60; }
+
+// ====== 番茄钟 ======
+function setPomodoro() {
+  if (state !== 'idle') return;
+  workInput.value = 25;
+  breakSelect.value = 5;
+  renderIdle();
+}
+
+// ====== 渲染 ======
+var mainArea = document.getElementById('main-area');
+
+function render() {
+  if (state === 'idle') renderIdle();
+  else if (state === 'running' || state === 'paused') renderRunning();
+  else if (state === 'break') renderBreak();
+}
+
+function renderIdle() {
+  setSettingsEnabled(true);
+  // pomodoroRound 在 stopTimer() 和 completeBreak() 中管理，不在此重置
+  mainArea.innerHTML =
+    '<div class="state-title">⏱️ 准备就绪</div>' +
+    '<div class="countdown">' + fmtTime(getWorkSeconds()) + '</div>' +
+    '<button class="btn btn-primary" onclick="startTimer()">▶️ 开始计时</button>' +
+    '<div class="stats-section" id="stats-section"></div>';
+  renderStatsChart();
+}
+
+function renderRunning() {
+  setSettingsEnabled(false);
+  var elapsed, remaining, totalSec;
+
+  if (state === 'paused') {
+    remaining = pausedRemaining;
+    totalSec = workSeconds;
+  } else {
+    elapsed = (Date.now() - startTime) / 1000;
+    remaining = Math.max(0, workSeconds - elapsed);
+    totalSec = workSeconds;
+  }
+
+  if (state !== 'paused' && remaining <= 0) {
+    transitionToBreak();
+    return;
+  }
+
+  var pct = Math.min(100, ((totalSec - remaining) / totalSec) * 100);
+  var title = '⏱️ 专注工作中...';
+  if (pomodoroRound > 0) {
+    title += '<span class="pomodoro-badge">🍅 第 ' + pomodoroRound + ' 轮</span>';
+  }
+  if (state === 'paused') title = '⏸️ 已暂停';
+
+  var html = '<div class="state-title">' + title + '</div>' +
+    '<div class="countdown">' + fmtTime(remaining) + '</div>' +
+    '<div class="progress-bar"><div class="fill" style="width:' + pct + '%' + (state === 'paused' ? ';transition:none' : '') + '"></div></div>';
+
+  if (state === 'paused') {
+    html += '<div class="btn-group">' +
+      '<button class="btn btn-primary" onclick="resumeTimer()">▶️ 继续</button>' +
+      '<button class="btn btn-secondary" onclick="stopTimer()">⏹️ 停止</button></div>';
+  } else {
+    html += '<div class="btn-group">' +
+      '<button class="btn btn-secondary" onclick="pauseTimer()">⏸️ 暂停</button>' +
+      '<button class="btn btn-secondary" onclick="stopTimer()">⏹️ 停止</button></div>';
+  }
+  mainArea.innerHTML = html;
+}
+
+function renderBreak() {
+  setSettingsEnabled(false);
+  var elapsed = (Date.now() - startTime) / 1000;
+  var remaining = Math.max(0, breakSeconds - elapsed);
+
+  if (!beepPlayed) {
+    playBeep();
+    sendNotification();
+    beepPlayed = true;
+  }
+
+  var html = '<div class="state-title">🔔 该休息了！</div>';
+  if (currentExercise) {
+    html += '<div class="exercise-card">' +
+      '<div class="ex-name">' + currentExercise.name + '</div>' +
+      '<div class="ex-desc">' + currentExercise.desc + '</div></div>';
+  }
+  html += remaining > 0
+    ? '<div class="break-countdown">建议休息 ' + fmtTime(remaining) + '</div>'
+    : '<div class="break-countdown">休息时间已到</div>';
+
+  html += '<div class="btn-group">' +
+    '<button class="btn btn-success" onclick="completeBreak()">✅ 我完成了</button>' +
+    '<button class="btn btn-secondary" onclick="skipBreak()">⏭️ 跳过</button>';
+  if (snoozeCount < 3) {
+    html += '<button class="btn btn-warning btn-sm" onclick="snoozeBreak()">⏰ 再工作 5 分钟</button>';
+  }
+  html += '</div>';
+  mainArea.innerHTML = html;
+}
+
+// ====== 状态转换 ======
+function startTimer() {
+  if (timerId) clearInterval(timerId);
+  state = 'running';
+  startTime = Date.now();
+  workSeconds = getWorkSeconds();
+  breakSeconds = getBreakSeconds();
+  beepPlayed = false;
+  snoozeCount = 0;
+  if (workInput.value == 25 && breakSelect.value == 5) pomodoroRound = 1;
+  timerId = setInterval(render, 1000);
+  render();
+}
+
+function pauseTimer() {
+  var elapsed = (Date.now() - startTime) / 1000;
+  pausedRemaining = Math.max(0, workSeconds - elapsed);
+  state = 'paused';
+  clearInterval(timerId);
+  timerId = null;
+  render();
+}
+
+function resumeTimer() {
+  if (timerId) clearInterval(timerId);
+  state = 'running';
+  startTime = Date.now();
+  workSeconds = pausedRemaining;
+  timerId = setInterval(render, 1000);
+  render();
+}
+
+function stopTimer() {
+  state = 'idle';
+  clearInterval(timerId);
+  timerId = null;
+  pomodoroRound = 0;
+  breakSelect.value = '5';  // 重置休息时长
+  render();
+}
+
+function transitionToBreak() {
+  state = 'break';
+  startTime = Date.now();
+  beepPlayed = false;
+  addCompletion();
+  if (exercises.length > 0) {
+    currentExercise = exercises[Math.floor(Math.random() * exercises.length)];
+  }
+  render();
+}
+
+function snoozeBreak() {
+  snoozeCount++;
+  if (timerId) clearInterval(timerId);
+  state = 'running';
+  startTime = Date.now();
+  workSeconds = 5 * 60;  // snooze 5 分钟
+  breakSeconds = getBreakSeconds();
+  beepPlayed = false;
+  timerId = setInterval(render, 1000);
+  render();
+}
+
+function completeBreak() {
+  // 番茄钟轮次推进
+  if (pomodoroRound > 0 && pomodoroRound < 4) {
+    pomodoroRound++;
+    if (pomodoroRound === 4) {
+      breakSelect.value = 15;  // 下一轮是长休
+    }
+  } else if (pomodoroRound === 4) {
+    // 第 4 轮休息完成 → 完整周期结束，重置
+    pomodoroRound = 0;
+    breakSelect.value = 5;
+  }
+  state = 'idle';
+  clearInterval(timerId);
+  timerId = null;
+  currentExercise = null;
+  snoozeCount = 0;
+  render();
+}
+
+function skipBreak() { completeBreak(); }
+
+// ====== 统计（localStorage 持久化） ======
+var STORAGE_KEY = 'sit_reminder_stats';
+
+function loadStats() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { last_date: '', today_count: 0, total_count: 0, theme: 'auto', daily_history: {} };
+    return JSON.parse(raw);
+  } catch(e) { return { last_date: '', today_count: 0, total_count: 0, theme: 'auto', daily_history: {} }; }
+}
+
+function saveStats(todayCount, totalCount) {
+  var stats = loadStats();
+  stats.last_date = todayStr();
+  stats.today_count = todayCount;
+  stats.total_count = totalCount;
+  // 记录每日历史
+  if (!stats.daily_history) stats.daily_history = {};
+  stats.daily_history[todayStr()] = todayCount;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+}
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function updateStatsDisplay() {
+  var stats = loadStats();
+  document.getElementById('today-count').textContent = stats.today_count;
+  document.getElementById('total-count').textContent = stats.total_count;
+  document.getElementById('streak-count').textContent = calcStreak(stats.daily_history || {});
+}
+
+function addCompletion() {
+  var stats = loadStats();
+  if (stats.last_date !== todayStr()) stats.today_count = 0;
+  stats.today_count += 1;
+  stats.total_count += 1;
+  saveStats(stats.today_count, stats.total_count);
+  updateStatsDisplay();
+}
+
+// ====== 连续打卡天数 ======
+function calcStreak(history) {
+  var streak = 0;
+  var d = new Date();
+  // 检查今天
+  var today = todayStr();
+  if (!history[today]) {
+    // 今天还没有记录，检查昨天
+    d.setDate(d.getDate() - 1);
+  }
+  while (true) {
+    var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if (history[ds] && history[ds] > 0) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+// ====== 统计图表（原生 Canvas，零依赖） ======
+var chartPeriod = 'week';
+
+function renderStatsChart() {
+  var section = document.getElementById('stats-section');
+  if (!section) return;
+  section.innerHTML =
+    '<button class="stats-toggle" onclick="toggleChart()">📈 统计图表 ▾</button>' +
+    '<div id="chart-container" style="display:none;margin-top:12px;">' +
+    '<div class="chart-tabs">' +
+    '<button class="chart-tab active" onclick="switchChartTab(\'week\',this)">近 7 天</button>' +
+    '<button class="chart-tab" onclick="switchChartTab(\'month\',this)">近 30 天</button></div>' +
+    '<div class="chart-wrapper"><canvas id="stats-chart" height="200"></canvas></div></div>';
+}
+
+function toggleChart() {
+  var c = document.getElementById('chart-container');
+  if (!c) return;
+  var wasHidden = c.style.display === 'none';
+  c.style.display = wasHidden ? 'block' : 'none';
+  if (wasHidden) {
+    // 等浏览器完成布局再画，否则 canvas 尺寸为 0
+    requestAnimationFrame(function() { drawChart(); });
+  }
+}
+
+function switchChartTab(period, btn) {
+  chartPeriod = period;
+  document.querySelectorAll('.chart-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  drawChart();
+}
+
+function drawChart() {
+  var canvas = document.getElementById('stats-chart');
+  if (!canvas) return;
+  var stats = loadStats();
+  var history = stats.daily_history || {};
+  var days = chartPeriod === 'week' ? 7 : 30;
+  var values = [];
+  var labels = [];
+  for (var i = days - 1; i >= 0; i--) {
+    var d = new Date();
+    d.setDate(d.getDate() - i);
+    var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    labels.push((d.getMonth()+1) + '/' + d.getDate());
+    values.push(history[ds] || 0);
+  }
+
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (document.documentElement.getAttribute('data-theme') === 'auto' && window.matchMedia('(prefers-color-scheme:dark)').matches);
+
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.parentElement.clientWidth || 400;
+  var h = 200;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // 颜色
+  var barColor = isDark ? '#66bb6a' : '#4caf50';
+  var textColor = isDark ? '#999' : '#888';
+  var gridColor = isDark ? '#2a2a4a' : '#eee';
+
+  // 边距
+  var padLeft = 32, padRight = 8, padTop = 16, padBottom = 28;
+  var chartW = w - padLeft - padRight;
+  var chartH = h - padTop - padBottom;
+
+  var maxVal = Math.max.apply(null, values.concat([1]));
+  // y 轴向上取整
+  var yMax = Math.ceil(maxVal);
+  if (yMax === 0) yMax = 1;
+
+  // 清空
+  ctx.clearRect(0, 0, w, h);
+
+  // 网格线 + Y 轴标签
+  ctx.fillStyle = textColor;
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'right';
+  for (var yi = 0; yi <= yMax; yi++) {
+    var yy = padTop + chartH - (yi / yMax) * chartH;
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, yy);
+    ctx.lineTo(w - padRight, yy);
+    ctx.stroke();
+    if (yi % Math.max(1, Math.ceil(yMax / 5)) === 0) {
+      ctx.fillText(yi, padLeft - 6, yy + 4);
+    }
+  }
+
+  // 柱状图
+  var barCount = values.length;
+  var barGap = Math.max(1, chartW * 0.15 / barCount);
+  var barW = Math.max(2, (chartW - barGap * (barCount + 1)) / barCount);
+
+  ctx.textAlign = 'center';
+  for (var bi = 0; bi < barCount; bi++) {
+    var bx = padLeft + barGap + bi * (barW + barGap);
+    var bh = (values[bi] / yMax) * chartH;
+    var by = padTop + chartH - bh;
+
+    ctx.fillStyle = barColor;
+    ctx.beginPath();
+    roundRect(ctx, bx, by, barW, bh, 3);
+    ctx.fill();
+
+    // X 轴标签（每 N 个显示一个）
+    var showLabel = barCount <= 7 || bi % Math.ceil(barCount / 7) === 0;
+    if (showLabel) {
+      ctx.fillStyle = textColor;
+      ctx.fillText(labels[bi], bx + barW / 2, padTop + chartH + 16);
+    }
+
+    // 数值标签
+    if (values[bi] > 0) {
+      ctx.fillStyle = textColor;
+      ctx.fillText(values[bi], bx + barW / 2, by - 4);
+    }
+  }
+}
+
+// Canvas roundRect polyfill
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ====== 系统通知 ======
+function requestNotification() {
+  if (!('Notification' in window)) { alert('你的浏览器不支持通知功能'); return; }
+  Notification.requestPermission().then(function(p) {
+    var btn = document.getElementById('notify-btn');
+    if (p === 'granted') { btn.textContent = '✅ 通知已开启'; btn.className = 'btn-notify granted'; }
+    else { btn.textContent = '❌ 通知被拒绝'; btn.className = 'btn-notify denied'; }
+  });
+}
+
+function sendNotification() {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('久坐放松提醒', { body: currentExercise ? '该休息了！试试：' + currentExercise.name : '该休息了！站起来动一动吧' });
+  }
+}
+
+// ====== 初始化通知按钮 ======
+(function() {
+  var btn = document.getElementById('notify-btn');
+  if ('Notification' in window) {
+    if (Notification.permission === 'granted') { btn.textContent = '✅ 通知已开启'; btn.className = 'btn-notify granted'; }
+    else if (Notification.permission === 'denied') { btn.textContent = '❌ 通知被拒绝'; btn.className = 'btn-notify denied'; }
+  }
+})();
+
+// ====== 设置改变即时刷新 ======
+workInput.addEventListener('input', function() { if (state === 'idle') renderIdle(); });
+breakSelect.addEventListener('change', function() { if (state === 'idle') renderIdle(); });
+
+// ====== 初始化 ======
+updateStatsDisplay();
+render();
+</script>
+
+</body>
+</html>
